@@ -110,37 +110,57 @@ def testFrequency(f):
 
 
 
-handles = []
-opt_frequency = None
-opt_response = None
-for i in range(len(freqs)):
-    freq = freqs[i]
-    # Call test frequency function
-    sample_freq_results = testFrequency(freq)
-    if (sample_freq_results == -2):
-        continue
-    else:
-        # Use result to add a plot
-        Fs = 0.0000013
-        Ts = 1/Fs
-        #t = np.arange(0, 1500, 100)
-        n = len(sample_freq_results)
-        k = np.arange(n)
-        T = n/Fs
-        frq = k/T
-        frq = range(500, 2500, 1) #frq[range(n/2)]
-#        t = np.arange(0, len(sample_freq_results)/2, 0.5)
-        print(avg(sample_freq_results))
-        freq_response = np.fft.fft(sample_freq_results)/n
-        freq_response = freq_response[range(n/2)]
-        freq_response = freq_response[500:]
-        #freq_response = butter_bandpass_filter(freq_response, 500, 1500, 75000)
-        handle, = plt.plot(frq, abs(freq_response))
-        handles.append(handle)
-        if (top_x_avg(abs(freq_response).tolist(),10) > opt_response):
-            opt_frequency = sampleFreqs[i]
-            opt_response = top_x_avg(abs(freq_response).tolist(),10)
-        time.sleep(0.5)
+
+def testFrequencyRange(numTimes, pulse):
+    handles = []
+    opt_frequency = None
+    opt_response = None
+    frequencies = {}
+    responses = []
+    
+    for j in range(len(freqs)):
+        runningSum = 0
+        trials = 0
+        frequencies[sampleFreqs[j]] = []
+
+        for i in range(numTimes):
+
+            freq = freqs[j]
+            # Call test frequency function
+            sample_freq_results = testFrequency(freq)
+            if (sample_freq_results == -2):
+                continue
+            else:
+                trials += 1
+                # Use result to add a plot
+                Fs = 0.0000013
+                Ts = 1/Fs
+                #t = np.arange(0, 1500, 100)
+                n = len(sample_freq_results)
+                k = np.arange(n)
+                T = n/Fs
+                frq = k/T
+                frq = range(500, 2500, 1) #frq[range(n/2)]
+        #        t = np.arange(0, len(sample_freq_results)/2, 0.5)
+                print(avg(sample_freq_results))
+                freq_response = np.fft.fft(sample_freq_results)/n
+                freq_response = freq_response[range(n/2)]
+                freq_response = freq_response[500:]
+                #freq_response = butter_bandpass_filter(freq_response, 500, 1500, 75000)
+                handle, = plt.plot(frq, abs(freq_response))
+                handles.append(handle)
+                time.sleep(0.5)
+
+                avgVal = top_x_avg(abs(freq_response).tolist(),10)
+                runningSum += avgVal
+                frequencies[sampleFreqs[j]].append(avgVal)
+        #check average against max of previous frequencies
+        average = runningSum/trials       
+        if (average > opt_response):
+            opt_frequency = sampleFreqs[j]
+            opt_response = average 
+    print(sorted(frequencies.items()))
+    return [opt_frequency, opt_response, handles]
 
 
 '''
@@ -161,6 +181,8 @@ for i in range(len(allSamplesValues)): # TODO: edit this to support freq sweep
     handle = plt.plot(t, allSamplesValues[i], label=("Sample " + str(i)))
     handles.append(handle)'''
 
+numTimes = raw_input("How many trials do you want?")
+[opt_frequency, opt_response,handles] = testFrequencyRange(int(numTimes), freqs)
 print("Optimal Frequency = " + str(opt_frequency))
 print("Optimal Mag. Response = " + str(opt_response))
 if (opt_response < 0.75):
