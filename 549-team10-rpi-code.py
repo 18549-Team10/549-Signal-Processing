@@ -52,10 +52,6 @@ for freq in range(600,1500,100):
     new_square.append(pigpio.pulse(1<<GPIO, 0,       1000000/(2*freq)))
     new_square.append(pigpio.pulse(0,       1<<GPIO, 1000000/(2*freq)))
     freqs.append(new_square)
-    # expectedFreq = 600 Hz | actualFreq = 600 Hz (signal generated from Pi)
-    # expectedFreq = 700 Hz | actualFreq = 800 Hz (signal generated from Pi)
-    # expectedFreq = 800 Hz | actualFreq = 1000 Hz (signal generated from Pi)
-    # expectedFreq = 900 Hz | actualFreq = 1200 Hz (signal generated from Pi)
 
 print('Reading MCP3008 values, press Ctrl-C to quit...')
 # Print nice channel column headers.
@@ -94,8 +90,18 @@ for freq in freqs:
         continue
     else:
         # Use result to add a plot
-        t = np.arange(0, len(sample_freq_results)/2, 0.5)
-        handle, = plt.plot(t, sample_freq_results)
+        Fs = 0.0000013
+        Ts = 1/Fs
+        #t = np.arange(0, 1500, 100)
+        n = len(sample_freq_results)
+        k = np.arange(n)
+        T = n/Fs
+        frq = k/T
+        frq = range(0, 2500, 1) #frq[range(n/2)]
+#        t = np.arange(0, len(sample_freq_results)/2, 0.5)
+        freq_response = np.fft.fft(sample_freq_results)/n
+        freq_response = freq_response[range(n/2)]
+        handle, = plt.plot(frq, abs(freq_response))
         handles.append(handle)
         time.sleep(0.5)
 
@@ -118,9 +124,9 @@ for i in range(len(allSamplesValues)): # TODO: edit this to support freq sweep
     handle = plt.plot(t, allSamplesValues[i], label=("Sample " + str(i)))
     handles.append(handle)'''
 
-plt.xlabel('time (ms)')
-plt.ylabel('voltage (% of 3.3V)')
-plt.title('Full Bottle Sample - 20.0 kHz')
+plt.xlabel('Freq (Hz)')
+plt.ylabel('|Y(freq)|')
+plt.title('Half-Full Bottle Sample')
 plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
 plt.grid(True)
 plt.show()
