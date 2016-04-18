@@ -67,7 +67,7 @@ def top_x_avg(l, x):
     copy_l = copy.deepcopy(l)
     top_x_l = []
     for i in range(x):
-        top_x_l.append(copy_l.pop(l.index(max(l))))
+        if len(l) > 0: top_x_l.append(copy_l.pop(l.index(max(l))))
     return avg(top_x_l)
 
 freqs = []
@@ -81,12 +81,6 @@ for freq in sampleFreqs:
     new_square.append(pigpio.pulse(0,       1<<GPIO, 1000000/(2*freq)))
     freqs.append(new_square)
 
-print('Reading MCP3008 values, press Ctrl-C to quit...')
-# Print nice channel column headers.
-print('| {0:>4} | {1:>4} | {2:>4} | {3:>4} | {4:>4} | {5:>4} | {6:>4} | {7:>4} |'.format(*range(8)))
-print('-' * 57)
-counter = 0
-
 # GPIO.output(3, output)
 # Main program loop.
 allSamplesValues = []
@@ -98,7 +92,7 @@ def testFrequency(f):
     wid = pi.wave_create()
     if wid < 0: print "error generating wave"; return -2
     pi.wave_send_repeat(wid)
-    for i in range(5000):
+    for i in range(3000):
         val = mcp.read_adc(0)
         next_values.append(val)
         time.sleep(VOLT_3v3)
@@ -108,22 +102,22 @@ def testFrequency(f):
     allSamplesValues.append(next_values)
     return next_values
 
-
-
-
+allTrials = []
 def testFrequencyRange(numTimes, pulse):
     handles = []
     opt_frequency = None
     opt_response = None
     frequencies = {}
     responses = []
-    
-    for j in range(len(freqs)):
-        runningSum = 0
-        trials = 0
-        frequencies[sampleFreqs[j]] = []
 
-        for i in range(numTimes):
+    frq = range(500, 1500, 1) #frq[range(n/2)]
+
+    for i in range(numTimes):
+        runningSum = 0
+        numTrials = 0
+        trials = []
+
+        for j in range(len(freqs)):
 
             freq = freqs[j]
             # Call test frequency function
@@ -131,39 +125,42 @@ def testFrequencyRange(numTimes, pulse):
             if (sample_freq_results == -2):
                 continue
             else:
-                trials += 1
+                numTrials += 1
                 # Use result to add a plot
                 Fs = 0.0000013
                 Ts = 1/Fs
                 #t = np.arange(0, 1500, 100)
                 n = len(sample_freq_results)
-                k = np.arange(n)
-                T = n/Fs
-                frq = k/T
-                frq = range(500, 2500, 1) #frq[range(n/2)]
-        #        t = np.arange(0, len(sample_freq_results)/2, 0.5)
+                #        t = np.arange(0, len(sample_freq_results)/2, 0.5)
                 print(avg(sample_freq_results))
                 freq_response = np.fft.fft(sample_freq_results)/n
                 freq_response = freq_response[range(n/2)]
                 freq_response = freq_response[500:]
                 #freq_response = butter_bandpass_filter(freq_response, 500, 1500, 75000)
                 handle, = plt.plot(frq, abs(freq_response))
-                handles.append(handle)
-                time.sleep(0.5)
+                #print("Index of Maximum Response = " + str())
+                max_response_index = abs(freq_response).tolist().index(max(abs(freq_response).tolist()))
+                peak_val = frq[max_response_index]
+                peak_mag_response = abs(freq_response[max_response_index])
+                #print("Peak Value = " + str())
+                #print("Peak Mag. Response = " + str(abs()))
 
-                avgVal = top_x_avg(abs(freq_response).tolist(),10)
+                handles.append(handle)
+                time.sleep(0.01)
+                avgVal = top_x_avg(abs(freq_response).tolist(),5)
                 runningSum += avgVal
-                frequencies[sampleFreqs[j]].append(avgVal)
+                print("Peak Val = " + str(peak_val))
+                print("Peak Mag. Response = " + str(peak_mag_response))
+                trials.append(peak_val)
+                trials.append(peak_mag_response)
+        allTrials.append(trials)
         #check average against max of previous frequencies
-        average = runningSum/trials       
-        if (average > opt_response):
-            opt_frequency = sampleFreqs[j]
-            opt_response = average 
-    print(sorted(frequencies.items()))
+        #average = runningSum/trials       
+        #if (average > opt_response):
+        #    opt_frequency = sampleFreqs[j]
+        #    opt_response = average 
     return [opt_frequency, opt_response, handles]
 
-
-'''
 def readFile(path):
     with open(path, "rt") as f:
         return f.read()
@@ -172,14 +169,9 @@ def writeFile(path, contents):
     with open(path, "wt") as f:
         f.write(contents)
 
-contentsToWrite = str(allSamplesValues)
-writeFile("empty.txt", contentsToWrite)
+#contentsToWrite = str(allSamplesValues)
+#writeFile("empty.txt", contentsToWrite)
 
-t = np.arange(0, len(allSamplesValues[0])/2, 0.5)
-handles = []
-for i in range(len(allSamplesValues)): # TODO: edit this to support freq sweep
-    handle = plt.plot(t, allSamplesValues[i], label=("Sample " + str(i)))
-    handles.append(handle)'''
 
 numTimes = raw_input("How many trials do you want?")
 [opt_frequency, opt_response,handles] = testFrequencyRange(int(numTimes), freqs)
@@ -198,6 +190,23 @@ else:
         print("Container is a quarter full!")
     else:
         print("Container is empty!")
+#print (allTrials)
+allTrialsStr = str(allTrials)
+csvStr = ""
+firstIndex = 1
+for i in range(len(allTrialsStr)-1):
+    if (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ','):
+        thisRow = allTrialsStr[firstIndex:i+1]
+        csvStr += thisRow
+        newChar = '\n'
+        csvStr += newChar
+        firstIndex = i+3
+        print("First Index Char = " + allTrialsStr[firstIndex])
+    elif (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ']'):
+        thisRow = allTrialsStr[firstIndex:i+1]
+        csvStr += thisRow
+print("CSV Str = " + csvStr)
+writeFile("oneQuarter.csv", csvStr)
 plt.xlabel('Freq (Hz)')
 plt.ylabel('|Y(freq)|')
 plt.title('Full Bottle Sample')
