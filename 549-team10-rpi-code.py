@@ -16,6 +16,8 @@ import RPi.GPIO as GPIO
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import butter, lfilter
+import copy
 
 # Software SPI configuration:
 ##3.3V = 1 (ADC)
@@ -43,10 +45,36 @@ import pigpio
 
 GPIO=4
 
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
+def avg(l):
+    if (len(l) > 0):
+        return (sum(l)/len(l))
+    else:
+        return None
+
+def top_x_avg(l, x):
+    copy_l = copy.deepcopy(l)
+    top_x_l = []
+    for i in range(x):
+        top_x_l.append(copy_l.pop(l.index(max(l))))
+    return avg(top_x_l)
+
 freqs = []
+sampleFreqs = range(600,1500,100)
 
 # set up frequencies
-for freq in range(600,1500,100):
+for freq in sampleFreqs:
     new_square = []
 #                                  ON       OFF      MICROS
     new_square.append(pigpio.pulse(1<<GPIO, 0,       1000000/(2*freq)))
@@ -83,7 +111,10 @@ def testFrequency(f):
 
 
 handles = []
-for freq in freqs:
+opt_frequency = None
+opt_response = None
+for i in range(len(freqs)):
+    freq = freqs[i]
     # Call test frequency function
     sample_freq_results = testFrequency(freq)
     if (sample_freq_results == -2):
@@ -97,12 +128,18 @@ for freq in freqs:
         k = np.arange(n)
         T = n/Fs
         frq = k/T
-        frq = range(0, 2500, 1) #frq[range(n/2)]
+        frq = range(500, 2500, 1) #frq[range(n/2)]
 #        t = np.arange(0, len(sample_freq_results)/2, 0.5)
+        print(avg(sample_freq_results))
         freq_response = np.fft.fft(sample_freq_results)/n
         freq_response = freq_response[range(n/2)]
+        freq_response = freq_response[500:]
+        #freq_response = butter_bandpass_filter(freq_response, 500, 1500, 75000)
         handle, = plt.plot(frq, abs(freq_response))
         handles.append(handle)
+        if (top_x_avg(abs(freq_response).tolist(),10) > opt_response):
+            opt_frequency = sampleFreqs[i]
+            opt_response = top_x_avg(abs(freq_response).tolist(),10)
         time.sleep(0.5)
 
 
@@ -124,9 +161,24 @@ for i in range(len(allSamplesValues)): # TODO: edit this to support freq sweep
     handle = plt.plot(t, allSamplesValues[i], label=("Sample " + str(i)))
     handles.append(handle)'''
 
+print("Optimal Frequency = " + str(opt_frequency))
+print("Optimal Mag. Response = " + str(opt_response))
+if (opt_response < 0.75):
+    print("Container is empty!")
+else:
+    if (opt_frequency < 1000):
+        print ("Container is full!")
+    elif (opt_frequency == 1000):
+        print ("Container is three-quarters full!")
+    elif (opt_frequency == 1100):
+        print("Container is half full!")
+    elif (opt_frequency == 1200):
+        print("Container is a quarter full!")
+    else:
+        print("Container is empty!")
 plt.xlabel('Freq (Hz)')
 plt.ylabel('|Y(freq)|')
-plt.title('Half-Full Bottle Sample')
+plt.title('Full Bottle Sample')
 plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
 plt.grid(True)
 plt.show()
