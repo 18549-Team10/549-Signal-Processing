@@ -1,5 +1,3 @@
-from classifySample import *
-
 def readFile(path):
     with open(path, "rt") as f:
         return f.read()
@@ -53,8 +51,8 @@ def convertCsvToDict(csvFileName, numberOfPeaks):
 
     return sorted(output)
 
-def createTrainingData():
+def createTrainingDataMap():
     global trainingData
     trainingData = dict()
     for s in ['empty','quarter','half','threeQuarters','full']:
-        trainingData[s] = convertCsvToDict(s + '.csv', 7)
+        trainingData[s] = convertCsvToDict(s + '.csv', 9)
