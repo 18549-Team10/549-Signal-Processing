@@ -6,18 +6,18 @@ def bestMatch(freq, mag, mapPeaks):
     # match based on magnitude as well
     minDist = None
     bestFreq, bestMag = None, None
-    for (mapFreq, mapMag):
+    for (mapFreq, mapMag) in mapPeaks:
         dist = abs(mapFreq - freq)
         if minDist == None or dist < minDist:
             minDist = dist
             bestFreq, bestMag = mapFreq, mapMag
-    return bestFreq, best Mag
+    return bestFreq, bestMag
 
 def score(samplePeaks, mapPeaks):
     # currently, only adds to score based on closeness of frequencies, but can
     # be modified to score based on similarity of magnitude as wells
     totalScore = 0
-	for (freq,mag) in samplePeaks:
+    for (freq,mag) in samplePeaks:
         matchFreq,matchMag = bestMatch(freq,mag, mapPeaks)
         freqDiff = abs(freq - matchFreq)
         magDiff = abs(mag - matchMag)

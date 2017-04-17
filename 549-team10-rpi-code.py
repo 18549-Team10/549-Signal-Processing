@@ -3,6 +3,8 @@
 # Author: Tony DiCola
 # License: Public Domain
 import time
+import createTrainingDataMap
+import classifySample
 
 ################################################################################
 # if file does not work, try running with sudo
@@ -161,6 +163,21 @@ def testFrequencyRange(numTimes, pulse):
         #    opt_response = average 
     return [opt_frequency, opt_response, handles]
 
+def getSamplePeaks(freqsToTest):
+    frq = range(500, 1500, 1)
+    peaks = []
+    for i in range(len(freqsToTest)):
+        sample = testFrequency(freqsToTest[i])
+        freq_response = np.fft.fft(sample_freq_results)/n
+        freq_response = freq_response[range(n/2)]
+        freq_response = freq_response[500:]
+
+        max_response_index = abs(freq_response).tolist().index(max(abs(freq_response).tolist()))
+        peak_val = frq[max_response_index]
+        peak_mag_response = abs(freq_response[max_response_index])
+        peaks.append((peak_val, peak_mag_response))
+    return peaks
+
 def readFile(path):
     with open(path, "rt") as f:
         return f.read()
@@ -169,48 +186,59 @@ def writeFile(path, contents):
     with open(path, "wt") as f:
         f.write(contents)
 
-#contentsToWrite = str(allSamplesValues)
-#writeFile("empty.txt", contentsToWrite)
+# decide if user wants to collect data or test against existing data
+user_input = None
+while user_input not in ["y","n"]:
+    user_input = raw_input("Enter 'y' for collecting test data or 'n' for guessing using existing test data")
 
-
-numTimes = raw_input("How many trials do you want?")
-[opt_frequency, opt_response,handles] = testFrequencyRange(int(numTimes), freqs)
-print("Optimal Frequency = " + str(opt_frequency))
-print("Optimal Mag. Response = " + str(opt_response))
-if (opt_response < 0.75):
-    print("Container is empty!")
-else:
-    if (opt_frequency < 1000):
-        print ("Container is full!")
-    elif (opt_frequency == 1000):
-        print ("Container is three-quarters full!")
-    elif (opt_frequency == 1100):
-        print("Container is half full!")
-    elif (opt_frequency == 1200):
-        print("Container is a quarter full!")
-    else:
+# collect data
+if user_input == "y":
+    numTimes = raw_input("How many trials do you want?")
+    [opt_frequency, opt_response,handles] = testFrequencyRange(int(numTimes), freqs)
+    print("Optimal Frequency = " + str(opt_frequency))
+    print("Optimal Mag. Response = " + str(opt_response))
+    if (opt_response < 0.75):
         print("Container is empty!")
-#print (allTrials)
-allTrialsStr = str(allTrials)
-csvStr = ""
-firstIndex = 1
-for i in range(len(allTrialsStr)-1):
-    if (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ','):
-        thisRow = allTrialsStr[firstIndex:i+1]
-        csvStr += thisRow
-        newChar = '\n'
-        csvStr += newChar
-        firstIndex = i+3
-        print("First Index Char = " + allTrialsStr[firstIndex])
-    elif (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ']'):
-        thisRow = allTrialsStr[firstIndex:i+1]
-        csvStr += thisRow
-print("CSV Str = " + csvStr)
-writeFile("oneQuarter.csv", csvStr)
-plt.xlabel('Freq (Hz)')
-plt.ylabel('|Y(freq)|')
-plt.title('Full Bottle Sample')
-plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
-plt.grid(True)
-plt.show()
+    else:
+        if (opt_frequency < 1000):
+            print ("Container is full!")
+        elif (opt_frequency == 1000):
+            print ("Container is three-quarters full!")
+        elif (opt_frequency == 1100):
+            print("Container is half full!")
+        elif (opt_frequency == 1200):
+            print("Container is a quarter full!")
+        else:
+            print("Container is empty!")
+    #print (allTrials)
+    allTrialsStr = str(allTrials)
+    csvStr = ""
+    firstIndex = 1
+    for i in range(len(allTrialsStr)-1):
+        if (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ','):
+            thisRow = allTrialsStr[firstIndex:i+1]
+            csvStr += thisRow
+            newChar = '\n'
+            csvStr += newChar
+            firstIndex = i+3
+            print("First Index Char = " + allTrialsStr[firstIndex])
+        elif (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ']'):
+            thisRow = allTrialsStr[firstIndex:i+1]
+            csvStr += thisRow
+    print("CSV Str = " + csvStr)
+    writeFile("oneQuarter.csv", csvStr)
+    plt.xlabel('Freq (Hz)')
+    plt.ylabel('|Y(freq)|')
+    plt.title('Full Bottle Sample')
+    plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
+    plt.grid(True)
+    plt.show()
 
+# test against existing data
+else:
+    samplePeaks = getSamplePeaks(freqs)
+    trainingDataMap = createTrainingDataMap.createTrainingDataMap()
+    guess = classifySample.classify(samplePeaks, trainingDataMap)
+    print(guess)
+
+print("done")
