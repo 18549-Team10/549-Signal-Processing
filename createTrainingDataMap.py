@@ -31,23 +31,22 @@ def convertCsvToDict(csvFileName, numberOfPeaks):
     allPeaksFiltered = filter(lambda (x,y) : y > maxPeak/10,allPeaks)
     allPeaksFiltered.sort()
 
-    indicesToSplit = []
     dists = []
-    for i in range(len(allPeaksFiltered) - 1):
-        dist = abs(allPeaksFiltered[i][0] - allPeaksFiltered[i + 1][0])
-        if len(indicesToSplit) < 9:
-            indicesToSplit.append(dist)
-        elif dist > min(indicesToSplit):
-            indicesToSplit = sorted(indicesToSplit)[1:]
-            indicesToSplit.append(dist)
+    for i in range(1, len(allPeaksFiltered)):
+        dist = abs(allPeaksFiltered[i][0] - allPeaksFiltered[i - 1][0])
+        dists.append((dist,i))
 
-    indicesToSplit.sort()
+    indicesToSplit = sorted([i for (dist,i) in sorted(dists)[len(dists) - 9:]])
+    print sorted(indicesToSplit)
 
     groups = []
+    j  = 0
     for i in indicesToSplit:
-        groups.append(allPeaksFiltered[:i])
-        allPeaksFiltered = allPeaksFiltered[i:]
+        groups.append(allPeaksFiltered[:i-j])
+        allPeaksFiltered = allPeaksFiltered[i-j:]
+        j = i
     groups.append(allPeaksFiltered)
+    # print groups
     output = []
     for g in groups:
         avgFreq, avgMag = avg([s[0] for s in g]), avg([s[1] for s in g])
@@ -58,6 +57,6 @@ def convertCsvToDict(csvFileName, numberOfPeaks):
 def createTrainingDataMap():
     global trainingData
     trainingData = dict()
-    for s in ['empty', 'quarter','half','threeQuarters','full']:
+    for s in ['empty','quarter','half','threeQuarters','full']:
         trainingData[s] = convertCsvToDict(s + '.csv', 9)
     return trainingData

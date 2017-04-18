@@ -22,7 +22,7 @@ def score(samplePeaks, mapPeaks):
         matchFreq,matchMag = bestMatch(freq,mag, mapPeaks)
         freqDiff = abs(freq - matchFreq)
         magDiff = abs(mag - matchMag)
-        totalScore += 1.0 / (freqDiff + 1)
+        totalScore += freqDiff
     return totalScore / len(samplePeaks)
 
 def classify(samplePeaks, trainingDataMap):
@@ -30,8 +30,7 @@ def classify(samplePeaks, trainingDataMap):
 	bestMatch = []
 	for fillLevel in trainingDataMap.keys():
 		currScore = score(samplePeaks, trainingDataMap[fillLevel])
-		print(fillLevel, currScore)
-		if currScore > bestScore:
+		if bestScore == None or currScore < bestScore:
 			bestScore = currScore
 			bestMatch = [fillLevel]
 		elif currScore == bestScore:
