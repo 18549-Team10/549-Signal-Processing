@@ -8,7 +8,7 @@ def readFile(path):
 
 fingerprints = createTrainingDataMap.createTrainingDataMap()
 
-def test(numTrials = 1):
+def test(numTrials = 1, ratio = 1.0):
     correct = 0
     for i in range(numTrials):
         sample = []
@@ -21,9 +21,9 @@ def test(numTrials = 1):
                 freq,mag = int(samplePeaks[2*i]),float(samplePeaks[2*i+1])
                 sample.append((freq,mag))
 
-        calculated = classifySample.classify(sample, fingerprints)
-        if len(calculated) > 1 or calculated[0] != sampleCsv:
-            print "expected:", sampleCsv, "calculated:", calculated
+        calculated = classifySample.classify(sample, fingerprints, ratio)
+        # if len(calculated) > 1 or calculated[0] != sampleCsv:
+        #     print "expected:", sampleCsv, "calculated:", calculated
         correct += calculated[0] == sampleCsv
-    print 1.0 * correct / numTrials
+    return 1.0 * correct / numTrials
     
