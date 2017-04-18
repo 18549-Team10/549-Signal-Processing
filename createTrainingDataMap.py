@@ -10,31 +10,36 @@ def avg(l):
     if (len(l) > 0):
         return (sum(l)/len(l))
     else:
+        print "empty list"
         return None
 
 def convertCsvToDict(csvFileName, numberOfPeaks):
     dataString = readFile(csvFileName)
     allPeaks = []
     maxPeak = None
-    for row in dataString.splitLines():
+    for row in dataString.splitlines():
         row = row.split(",")
         for i in range(len(row) / 2):
-            freq,mag = row[2*i],row[2*i+1]
+            if not(row[2*i].isdigit()): continue
+            freq,mag = int(row[2*i]),float(row[2*i+1])
             allPeaks.append((freq,mag))
             if maxPeak == None or mag > maxPeak:
                 maxPeak = mag
 
     # here, we filter our peaks so that we ignore those that are less than 10%
     # of the maximum peak
-    allPeaksFiltered = filter(lambda x : x > maxPeak/10,allPeaks)
+    allPeaksFiltered = filter(lambda (x,y) : y > maxPeak/10,allPeaks)
     allPeaksFiltered.sort()
 
     indicesToSplit = []
     dists = []
     for i in range(len(allPeaksFiltered) - 1):
-        dist = abs(allPeaksFiltered[j] - allPeaksFiltered[j + 1])
-        if dist > min(indicesToSplit):
-            indicesToSplit = sorted(indicesToSplit)[1:].append(dist)
+        dist = abs(allPeaksFiltered[i][0] - allPeaksFiltered[i + 1][0])
+        if len(indicesToSplit) < 9:
+            indicesToSplit.append(dist)
+        elif dist > min(indicesToSplit):
+            indicesToSplit = sorted(indicesToSplit)[1:]
+            indicesToSplit.append(dist)
 
     indicesToSplit.sort()
 
@@ -43,7 +48,6 @@ def convertCsvToDict(csvFileName, numberOfPeaks):
         groups.append(allPeaksFiltered[:i])
         allPeaksFiltered = allPeaksFiltered[i:]
     groups.append(allPeaksFiltered)
-
     output = []
     for g in groups:
         avgFreq, avgMag = avg([s[0] for s in g]), avg([s[1] for s in g])
@@ -54,5 +58,6 @@ def convertCsvToDict(csvFileName, numberOfPeaks):
 def createTrainingDataMap():
     global trainingData
     trainingData = dict()
-    for s in ['empty','quarter','half','threeQuarters','full']:
+    for s in ['empty', 'quarter','half','threeQuarters','full']:
         trainingData[s] = convertCsvToDict(s + '.csv', 9)
+    return trainingData

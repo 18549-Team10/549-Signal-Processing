@@ -69,7 +69,7 @@ def top_x_avg(l, x):
     copy_l = copy.deepcopy(l)
     top_x_l = []
     for i in range(x):
-        if len(l) > 0: top_x_l.append(copy_l.pop(l.index(max(l))))
+        if len(l) > 0: top_x_l.append(copy_l.pop(copy_l.index(max(copy_l))))
     return avg(top_x_l)
 
 freqs = []
@@ -123,7 +123,12 @@ def testFrequencyRange(numTimes, pulse):
 
             freq = freqs[j]
             # Call test frequency function
-            sample_freq_results = testFrequency(freq)
+            try:
+                sample_freq_results = testFrequency(freq)
+            except:
+                print "pigpio failed on the %dth iteration" % i
+                break
+                
             if (sample_freq_results == -2):
                 continue
             else:
@@ -134,7 +139,7 @@ def testFrequencyRange(numTimes, pulse):
                 #t = np.arange(0, 1500, 100)
                 n = len(sample_freq_results)
                 #        t = np.arange(0, len(sample_freq_results)/2, 0.5)
-                print(avg(sample_freq_results))
+                #print(avg(sample_freq_results))
                 freq_response = np.fft.fft(sample_freq_results)/n
                 freq_response = freq_response[range(n/2)]
                 freq_response = freq_response[500:]
@@ -151,8 +156,8 @@ def testFrequencyRange(numTimes, pulse):
                 time.sleep(0.01)
                 avgVal = top_x_avg(abs(freq_response).tolist(),5)
                 runningSum += avgVal
-                print("Peak Val = " + str(peak_val))
-                print("Peak Mag. Response = " + str(peak_mag_response))
+                #print("Peak Val = " + str(peak_val))
+                #print("Peak Mag. Response = " + str(peak_mag_response))
                 trials.append(peak_val)
                 trials.append(peak_mag_response)
         allTrials.append(trials)
@@ -167,8 +172,9 @@ def getSamplePeaks(freqsToTest):
     frq = range(500, 1500, 1)
     peaks = []
     for i in range(len(freqsToTest)):
-        sample = testFrequency(freqsToTest[i])
-        freq_response = np.fft.fft(sample_freq_results)/n
+        sample = testFrequency(freqsToTest[i])        
+        n = len(sample)
+        freq_response = np.fft.fft(sample)/n
         freq_response = freq_response[range(n/2)]
         freq_response = freq_response[500:]
 
@@ -194,6 +200,7 @@ while user_input not in ["y","n"]:
 # collect data
 if user_input == "y":
     numTimes = raw_input("How many trials do you want?")
+    print "starting to test %s times..." % numTimes
     [opt_frequency, opt_response,handles] = testFrequencyRange(int(numTimes), freqs)
     print("Optimal Frequency = " + str(opt_frequency))
     print("Optimal Mag. Response = " + str(opt_response))
@@ -212,8 +219,10 @@ if user_input == "y":
             print("Container is empty!")
     #print (allTrials)
     allTrialsStr = str(allTrials)
-    csvStr = ""
+    #csvStr = ""
     firstIndex = 1
+    csvStr = "\n".join([",".join([str(x) for x in trial]) for trial in allTrials])
+    '''
     for i in range(len(allTrialsStr)-1):
         if (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ','):
             thisRow = allTrialsStr[firstIndex:i+1]
@@ -224,12 +233,12 @@ if user_input == "y":
             print("First Index Char = " + allTrialsStr[firstIndex])
         elif (allTrialsStr[i] == ']') and (allTrialsStr[i+1] == ']'):
             thisRow = allTrialsStr[firstIndex:i+1]
-            csvStr += thisRow
+            csvStr += thisRow'''
     print("CSV Str = " + csvStr)
-    writeFile("oneQuarter.csv", csvStr)
+    writeFile("empty.csv", csvStr)
     plt.xlabel('Freq (Hz)')
     plt.ylabel('|Y(freq)|')
-    plt.title('Full Bottle Sample')
+    plt.title('Empty Bottle Sample')
     plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
     plt.grid(True)
     plt.show()
@@ -237,6 +246,7 @@ if user_input == "y":
 # test against existing data
 else:
     samplePeaks = getSamplePeaks(freqs)
+    writeFile("samplePeaks.csv",",".join([str(x) for x in samplePeaks]))
     trainingDataMap = createTrainingDataMap.createTrainingDataMap()
     guess = classifySample.classify(samplePeaks, trainingDataMap)
     print(guess)
