@@ -25,7 +25,7 @@ def score(samplePeaks, mapPeaks, ratio):
         totalScore += freqDiff*ratio + magDiff
     return totalScore / len(samplePeaks)
 
-def classify(samplePeaks, trainingDataMap, ratio = 1.0):
+def classify(samplePeaks, trainingDataMap, ratio = 0.01):
 	bestScore = None
 	bestMatch = []
 	for fillLevel in trainingDataMap.keys():

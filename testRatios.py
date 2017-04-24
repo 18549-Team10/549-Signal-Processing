@@ -16,9 +16,9 @@ def testRatios(numTrials = 1000):
         allRatios.append(score)
         if bestScore == None or score > bestScore:
             bestRatio, bestScore = ratio, score
-    for ratio in range(2,100):
-        score = test.test(numTrials,ratio)
-        allRatios.append(score)
-        if bestScore == None or score > bestScore:
-            bestRatio, bestScore = ratio, score
+    # for ratio in range(2,100):
+    #     score = test.test(numTrials,ratio)
+    #     allRatios.append(score)
+    #     if bestScore == None or score > bestScore:
+    #         bestRatio, bestScore = ratio, score
     return bestRatio, bestScore, allRatios
