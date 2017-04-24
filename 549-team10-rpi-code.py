@@ -73,7 +73,7 @@ def top_x_avg(l, x):
     return avg(top_x_l)
 
 freqs = []
-sampleFreqs = range(600,1500,100)
+sampleFreqs = range(300,1301,100)
 
 # set up frequencies
 for freq in sampleFreqs:
@@ -112,7 +112,7 @@ def testFrequencyRange(numTimes, pulse):
     frequencies = {}
     responses = []
 
-    frq = range(500, 1500, 1) #frq[range(n/2)]
+    frq = range(300, 1300, 1) #frq[range(n/2)]
 
     for i in range(numTimes):
         runningSum = 0
@@ -235,11 +235,11 @@ if user_input == "y":
             thisRow = allTrialsStr[firstIndex:i+1]
             csvStr += thisRow'''
     print("CSV Str = " + csvStr)
-    writeFile("empty.csv", csvStr)
+    writeFile("keg-empty.csv", csvStr)
     plt.xlabel('Freq (Hz)')
     plt.ylabel('|Y(freq)|')
     plt.title('Empty Bottle Sample')
-    plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
+    #plt.legend(handles, ('600 Hz', '700 Hz', '800 Hz', '900 Hz', '1000 Hz', '1100 Hz', '1200 Hz', '1300 Hz', '1400 Hz'))
     plt.grid(True)
     plt.show()
 
